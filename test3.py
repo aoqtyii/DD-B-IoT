@@ -30,14 +30,15 @@ def plot1(s):
 
     # Point process parameters
     def fun_lambda(x, y):
-        return 100 * np.exp(-(x ** 2 + y ** 2) / s ** 2)  # intensity function
+        return 10*np.exp(-(x ** 2 + y ** 2) / s ** 2)  # intensity function
 
     ###START -- find maximum lambda -- START ###
     # For an intensity function lambda, given by function fun_lambda,
     # finds the maximum of lambda in a rectangular region given by
     # [xMin,xMax,yMin,yMax].
     def fun_Neg(x):
-        return -fun_lambda(x[0], x[1])  # negative of lambda
+        m = -fun_lambda(x[0], x[1])
+        return m  # negative of lambda
 
     xy0 = [(xMin + xMax) / 2, (yMin + yMax) / 2]  # initial value(ie centre)
     # Find largest lambda value
@@ -55,22 +56,20 @@ def plot1(s):
 
     # for collecting statistics -- set numbSim=1 for one simulation
     numbPointsRetained = np.zeros(numbSim)  # vector to record number of points
-    for ii in range(numbSim):
-        # Simulate a Poisson point process
-        numbPoints = np.random.poisson(areaTotal * lambdaMax)  # Poisson number of points
-        xx = np.random.uniform(0, xDelta, (numbPoints, 1)) + xMin  # x coordinates of Poisson points
-        yy = np.random.uniform(0, yDelta, (numbPoints, 1)) + yMin  # y coordinates of Poisson points
+    # Simulate a Poisson point process
+    numbPoints = np.random.poisson(areaTotal * lambdaMax)  # Poisson number of points
+    xx = np.random.uniform(0, xDelta, (numbPoints, 1)) + xMin  # x coordinates of Poisson points
+    yy = np.random.uniform(0, yDelta, (numbPoints, 1)) + yMin  # y coordinates of Poisson points
 
-        # calculate spatially-dependent thinning probabilities
-        p = fun_p(xx, yy)
+    # calculate spatially-dependent thinning probabilities
+    p = fun_p(xx, yy)
 
-        # Generate Bernoulli variables (ie coin flips) for thinning
-        booleRetained = np.random.uniform(0, 1, (numbPoints, 1)) < p  # points to be retained
+    # Generate Bernoulli variables (ie coin flips) for thinning
+    booleRetained = np.random.uniform(0, 1, (numbPoints, 1)) < p  # points to be retained
 
-        # x/y locations of retained points
-        xxRetained = xx[booleRetained]
-        yyRetained = yy[booleRetained]
-        numbPointsRetained[ii] = xxRetained.size
+    # x/y locations of retained points
+    xxRetained = xx[booleRetained]
+    yyRetained = yy[booleRetained]
 
     def plot():
         # Plotting

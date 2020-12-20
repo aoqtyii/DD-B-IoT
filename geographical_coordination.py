@@ -5,10 +5,11 @@
 @Date : 2020/4/29
 @Desc :
 """
+from collections import Counter
 
 from scipy.optimize import minimize
-from scipy import integrate
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 
 
@@ -20,7 +21,7 @@ import matplotlib.pyplot as plt
 # plt.close('all')
 
 class geographical_coordination:
-    def __init__(self, xMin, xMax, yMin, yMax, n_of_nodes, num_Sim=1, s=0.7, ):
+    def __init__(self, xMin, xMax, yMin, yMax, n_of_nodes, num_Sim=1, s=0.7):
         self.xMin = xMin
         self.xMax = xMax
         self.yMin = yMin
@@ -54,72 +55,99 @@ class geographical_coordination:
         self.xxRetained_for_n = []
         self.yyRetained_for_n = []
 
-    # point process params
+    # 强度函数
     def fun_lambda(self, x, y):
-        # intensity function
-        return 100 * np.exp(-(x ** 2 + y ** 2) / self.s ** 2)
+        return 20 * np.exp(-(x ** 2 + y ** 2) / self.s ** 2)
 
-    # define thinning probability function
+    # 定义 thinning prob 函数
     def fun_p(self, x, y):
         return self.fun_lambda(x, y) / self.lambdaMax
 
+    # 负lambda
     def fun_neg(self, x):
-        # negative of lambda
-        # fun_neg = lambda x: -fun_lambda(x[0], x[1])
         return -self.fun_lambda(x[0], x[1])
 
     def geographical_coordinates(self):
-        # initial value(ie center)
         # xy0 = [(self.xMin + self.xMax) / 2, (self.yMin + self.yMax) / 2]
         xy0 = [(self.xMin_norm + self.xMax_norm) / 2, (self.yMin_norm + self.yMax_norm) / 2]
 
-        # Find largest lambda value
-        self.resultsOpt = minimize(self.fun_neg, xy0, bounds=((self.xMin_norm, self.xMax_norm), (self.yMin_norm, self.yMax_norm)))
+        # 找到最大的lambda值
+        self.resultsOpt = minimize(self.fun_neg, xy0,
+                                   bounds=((self.xMin_norm, self.xMax_norm), (self.yMin_norm, self.yMax_norm)))
         self.lambdaNegMin = self.resultsOpt.fun  # retrieve minimum value found by minimize
         self.lambdaMax = -self.lambdaNegMin
 
-        # for collecting statistics -- set num_Sim=1 for one simulation
-        self.numbPointsRetained = np.zeros(self.num_Sim)
+        # thinning过后保留的点的数量
+        self.numbPointsRetained = np.zeros(self.n_of_nodes)
 
-        for ii in range(self.num_Sim):
-            # Simulate a Poisson point process
-            # Poisson number of points
+        num_of_generate_points = 0
+
+        while True:
+            # 模拟PPP
+            # 泊松过程产生的点的数量
             self.numbPoints = np.random.poisson(self.areaTotal_norm * self.lambdaMax)
-            # get the number of Poisson points, numbPoints > n_of_IIot points
+            # 获取泊松点, numbPoints > n_of_IIot points
+            if self.numbPoints >= self.n_of_nodes:
+                # 泊松点的坐标
+                xx = np.random.uniform(0, self.xDelta_norm, (self.numbPoints, 1)) + self.xMin_norm
+                yy = np.random.uniform(0, self.yDelta_norm, (self.numbPoints, 1)) + self.yMin_norm
 
-            # x coordinates of Poisson points
-            # y coordinates of Poisson points
-            xx = np.random.uniform(0, self.xDelta_norm, (self.numbPoints, 1)) + self.xMin_norm
-            yy = np.random.uniform(0, self.yDelta_norm, (self.numbPoints, 1)) + self.yMin_norm
+                # 计算空间独立的thinning probabilities
+                p = self.fun_p(xx, yy)
 
-            # calculate spatially-dependent thinning probabilities
-            p = self.fun_p(xx, yy)
+                # 为thinning生成伯努利变量
+                booleRetained = np.random.uniform(0, 1, (self.numbPoints, 1)) < p
 
-            # Generate Bernoulli variables (ie coin flips) for thinning
-            # points to be retained
-            # Spatially independent thinning
-            booleRetained = np.random.uniform(0, 1, (self.numbPoints, 1)) < p
-            # index_of_Retained = np.argwhere(booleRetained == True)
-            # booleThinned = ~booleRetained
+                num_of_generate_points = Counter(booleRetained.T[0]).get(True)
+                if num_of_generate_points >= self.n_of_nodes:
+                    self.xxRetained = xx[booleRetained]
+                    self.yyRetained = yy[booleRetained]
+                    break
 
-            # assert sum(booleRetained == True).__int__() > self.n_of_nodes
+        """
+        # 模拟PPP
+        # 泊松过程产生的点的数量
+        self.numbPoints = np.random.poisson(self.areaTotal_norm * self.lambdaMax)
+        # 获取泊松点, numbPoints > n_of_IIot points
 
-            # x/y locations of retained points
-            self.xxRetained = xx[booleRetained]
-            self.yyRetained = yy[booleRetained]
-            # self.xxThinned = xx[booleThinned]
-            # self.yyThinned = yy[booleThinned]
-            # for index in index_of_Retained:
-            #     self.xxRetained.append(xx[index[0]][index[1]])
-            #     self.yyRetained.append(yy[index[0]][index[1]])
+        # 泊松点的坐标
+        xx = np.random.uniform(0, self.xDelta_norm, (self.numbPoints, 1)) + self.xMin_norm
+        yy = np.random.uniform(0, self.yDelta_norm, (self.numbPoints, 1)) + self.yMin_norm
 
-            # self.numbPointsRetained[ii] = self.xxRetained.size
+        # 计算空间独立的thinning probabilities
+        p = self.fun_p(xx, yy)
 
-            for i in range(self.n_of_nodes):
-                # self.xxRetained_for_n[i] = self.xxRetained[i]/self.xDelta_norm*self.xDelta
-                # self.yyRetained_for_n[i] = self.yyRetained[i]/self.yDelta_norm*self.yDelta
-                self.xxRetained_for_n.append(self.xxRetained[i]/self.xDelta_norm*self.xDelta)
-                self.yyRetained_for_n.append(self.yyRetained[i]/self.yDelta_norm*self.yDelta)
+        # 为thinning生成伯努利变量
+        booleRetained = np.random.uniform(0, 1, (self.numbPoints, 1)) < p
+        # index_of_Retained = np.argwhere(booleRetained == True)
+        # booleThinned = ~booleRetained
+
+        # assert sum(booleRetained == True).__int__() > self.n_of_nodes
+        self.xxRetained = xx[booleRetained]
+        self.yyRetained = yy[booleRetained]
+        # self.xxThinned = xx[booleThinned]
+        # self.yyThinned = yy[booleThinned]
+        # for index in index_of_Retained:
+        #     self.xxRetained.append(xx[index[0]][index[1]])
+        #     self.yyRetained.append(yy[index[0]][index[1]])
+
+        # self.numbPointsRetained[ii] = self.xxRetained.size
+        
+        # 随机thinning点使得总数为设定值
+
+        for i in range(self.n_of_nodes):
+            # self.xxRetained_for_n[i] = self.xxRetained[i]/self.xDelta_norm*self.xDelta
+            # self.yyRetained_for_n[i] = self.yyRetained[i]/self.yDelta_norm*self.yDelta
+            self.xxRetained_for_n.append(self.xxRetained[i] / self.xDelta_norm * self.xDelta)
+            self.yyRetained_for_n.append(self.yyRetained[i] / self.yDelta_norm * self.yDelta)
 
         # return n coordinates of IIoT nodes.
         return np.array(self.xxRetained_for_n), np.array(self.yyRetained_for_n), self.s
+        """
+        len = self.xxRetained.shape[0]
+        sample_list = [i for i in range(len)]
+        sample_list = random.sample(sample_list, self.n_of_nodes)
+        sample_list = sorted(sample_list)
+        self.xxRetained = self.xxRetained[sample_list]
+        self.yyRetained = self.yyRetained[sample_list]
+        return self.xxRetained, self.yyRetained, self.s

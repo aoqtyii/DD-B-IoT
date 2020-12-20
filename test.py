@@ -74,17 +74,17 @@ from test3 import plot1
 
 # create_env = lambda: gym.make('BlockChain-v0')
 # dummy_env = create_env()
-# env = gym.make('BlockChain-v0')
-# # reset的作用
-# env.reset()
-#
-# for _ in range(10):
-#     action = env.action_space.sample()
-#     print(action)
-#     print(env.step(action))
+env = gym.make('BlockChain-v0')
+# reset的作用
+env.reset()
 
-for s in range(8, 4, -1):
-    plot1(s / 10)
+for _ in range(10):
+    action = env.action_space.sample()
+    print(action)
+    print(env.step(action))
+
+# for s in range(8, 4, -1):
+#     plot1(s / 10)
 
 
 

@@ -80,8 +80,6 @@ class geographical_coordination:
         # thinning过后保留的点的数量
         self.numbPointsRetained = np.zeros(self.n_of_nodes)
 
-        num_of_generate_points = 0
-
         while True:
             # 模拟PPP
             # 泊松过程产生的点的数量
@@ -104,48 +102,8 @@ class geographical_coordination:
                     self.yyRetained = yy[booleRetained]
                     break
 
-        """
-        # 模拟PPP
-        # 泊松过程产生的点的数量
-        self.numbPoints = np.random.poisson(self.areaTotal_norm * self.lambdaMax)
-        # 获取泊松点, numbPoints > n_of_IIot points
-
-        # 泊松点的坐标
-        xx = np.random.uniform(0, self.xDelta_norm, (self.numbPoints, 1)) + self.xMin_norm
-        yy = np.random.uniform(0, self.yDelta_norm, (self.numbPoints, 1)) + self.yMin_norm
-
-        # 计算空间独立的thinning probabilities
-        p = self.fun_p(xx, yy)
-
-        # 为thinning生成伯努利变量
-        booleRetained = np.random.uniform(0, 1, (self.numbPoints, 1)) < p
-        # index_of_Retained = np.argwhere(booleRetained == True)
-        # booleThinned = ~booleRetained
-
-        # assert sum(booleRetained == True).__int__() > self.n_of_nodes
-        self.xxRetained = xx[booleRetained]
-        self.yyRetained = yy[booleRetained]
-        # self.xxThinned = xx[booleThinned]
-        # self.yyThinned = yy[booleThinned]
-        # for index in index_of_Retained:
-        #     self.xxRetained.append(xx[index[0]][index[1]])
-        #     self.yyRetained.append(yy[index[0]][index[1]])
-
-        # self.numbPointsRetained[ii] = self.xxRetained.size
-        
-        # 随机thinning点使得总数为设定值
-
-        for i in range(self.n_of_nodes):
-            # self.xxRetained_for_n[i] = self.xxRetained[i]/self.xDelta_norm*self.xDelta
-            # self.yyRetained_for_n[i] = self.yyRetained[i]/self.yDelta_norm*self.yDelta
-            self.xxRetained_for_n.append(self.xxRetained[i] / self.xDelta_norm * self.xDelta)
-            self.yyRetained_for_n.append(self.yyRetained[i] / self.yDelta_norm * self.yDelta)
-
-        # return n coordinates of IIoT nodes.
-        return np.array(self.xxRetained_for_n), np.array(self.yyRetained_for_n), self.s
-        """
-        len = self.xxRetained.shape[0]
-        sample_list = [i for i in range(len)]
+        length = self.xxRetained.shape[0]
+        sample_list = [i for i in range(length)]
         sample_list = random.sample(sample_list, self.n_of_nodes)
         sample_list = sorted(sample_list)
         self.xxRetained = self.xxRetained[sample_list]

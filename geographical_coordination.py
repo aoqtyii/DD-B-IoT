@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 # 1. 2D inhomogeneous PPP分布
 # 2. 对于非齐次泊松点过程的模拟，首先模拟一个均匀的泊松点过程，然后根据确定性函数适当地变换这些点
-# 3. 模拟联合分布的随机变量的标准方法是使用  马尔可夫链蒙特卡洛；应用MCMC方法就是简单地将随机点处理操作重复应用于所有点
+# 3. 模拟联合分布的随机变量的标准方法是使用马尔可夫链蒙特卡洛；应用MCMC方法就是简单地将随机点处理操作重复应用于所有点
 #    将使用基于Thinning的通用但更简单的方法(Thinning是模拟非均匀泊松点过程的最简单，最通用的方法)
 
 # plt.close('all')
@@ -40,6 +40,7 @@ class geographical_coordination:
         self.num_Sim = num_Sim
         self.s = s
 
+        # 是指定区域范围内的所有节点数
         self.n_of_nodes = n_of_nodes
 
         self.resultsOpt = None
@@ -52,8 +53,6 @@ class geographical_coordination:
         self.yyRetained = []
         self.xxThinned = []
         self.yyThinned = []
-        self.xxRetained_for_n = []
-        self.yyRetained_for_n = []
 
     # 强度函数
     def fun_lambda(self, x, y):
@@ -74,7 +73,7 @@ class geographical_coordination:
         # 找到最大的lambda值
         self.resultsOpt = minimize(self.fun_neg, xy0,
                                    bounds=((self.xMin_norm, self.xMax_norm), (self.yMin_norm, self.yMax_norm)))
-        self.lambdaNegMin = self.resultsOpt.fun  # retrieve minimum value found by minimize
+        self.lambdaNegMin = self.resultsOpt.fun
         self.lambdaMax = -self.lambdaNegMin
 
         # thinning过后保留的点的数量
@@ -106,6 +105,7 @@ class geographical_coordination:
         sample_list = [i for i in range(length)]
         sample_list = random.sample(sample_list, self.n_of_nodes)
         sample_list = sorted(sample_list)
-        self.xxRetained = self.xxRetained[sample_list]
-        self.yyRetained = self.yyRetained[sample_list]
-        return self.xxRetained, self.yyRetained, self.s
+        self.xxRetained = self.xxRetained[sample_list]*self.xDelta/2
+        self.yyRetained = self.yyRetained[sample_list]*self.yDelta/2
+        # return self.xxRetained, self.yyRetained, self.s
+        return self
